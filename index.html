@@ -33,7 +33,6 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 .logo span{color:var(--text2);font-weight:400;font-size:10px;letter-spacing:1px;display:block;}
 .header-user{display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
 .user-badge{background:var(--bg3);border:1px solid var(--border);padding:5px 11px;border-radius:6px;font-size:12px;font-weight:600;color:var(--blue);font-family:'Share Tech Mono',monospace;}
-.elo-badge{background:rgba(255,215,0,.1);border:1px solid rgba(255,215,0,.3);padding:5px 9px;border-radius:6px;font-size:11px;color:var(--gold);font-family:'Share Tech Mono',monospace;}
 .btn-icon{background:transparent;border:1px solid var(--border);color:var(--text2);padding:5px 9px;border-radius:6px;cursor:pointer;font-size:15px;transition:all .2s;}
 .btn-icon:hover{border-color:var(--blue);color:var(--blue);}
 .btn-logout{background:transparent;border:1px solid var(--danger);color:var(--danger);padding:5px 11px;border-radius:6px;cursor:pointer;font-size:12px;font-family:'Rajdhani',sans-serif;font-weight:600;transition:all .2s;}
@@ -119,7 +118,6 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 .rank-pos.silver{background:rgba(200,200,220,.1);color:#b0b8c8;border:1px solid rgba(200,200,220,.2);}
 .rank-pos.bronze{background:rgba(180,100,30,.15);color:#c8843a;border:1px solid rgba(180,100,30,.3);}
 .rank-name{flex:1;font-weight:600;font-size:13px;}
-.rank-elo{font-family:'Share Tech Mono',monospace;color:var(--gold);font-size:11px;margin-right:5px;}
 .rank-wins{font-family:'Share Tech Mono',monospace;color:var(--blue);font-size:12px;}
 .rank-wins span{font-size:10px;color:var(--text2);}
 .rank-empty{color:var(--text2);font-size:12px;text-align:center;padding:14px;}
@@ -136,7 +134,6 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 .player-color.black{background:#2a2620;}
 .player-info{flex:1;min-width:0;}
 .player-nick{font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.player-elo{font-size:10px;color:var(--gold);font-family:'Share Tech Mono',monospace;}
 .player-timer{font-family:'Share Tech Mono',monospace;font-size:17px;color:var(--text);letter-spacing:1px;}
 .player-timer.warning{color:var(--danger);animation:tick .5s infinite;}
 @keyframes tick{0%,100%{opacity:1}50%{opacity:.4}}
@@ -223,9 +220,6 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 .history-info{flex:1;}
 .history-opp{font-weight:600;font-size:13px;}
 .history-meta{font-size:11px;color:var(--text2);margin-top:1px;}
-.history-elo-delta{font-family:'Share Tech Mono',monospace;font-size:12px;}
-.history-elo-delta.pos{color:var(--success);}
-.history-elo-delta.neg{color:var(--danger);}
 .history-empty{color:var(--text2);text-align:center;padding:36px;font-size:13px;}
 
 /* ── OVERLAYS ───────────────────────────────────────── */
@@ -261,11 +255,6 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 .promo-btn{width:60px;height:60px;background:var(--bg3);border:2px solid var(--border);border-radius:10px;font-size:38px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
 .promo-btn:hover{border-color:var(--blue);transform:scale(1.1);}
 
-/* ELO change */
-.elo-change{font-family:'Share Tech Mono',monospace;font-size:20px;margin:4px 0;}
-.elo-change.pos{color:var(--success);}
-.elo-change.neg{color:var(--danger);}
-.elo-change.neu{color:var(--text2);}
 
 /* Theme picker */
 .theme-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:11px 0;}
@@ -292,7 +281,6 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 <header class="header" id="app-header" style="display:none">
   <div class="logo">CLASS<span style="color:var(--blue)">CHESS</span><span>XADREZ ONLINE</span></div>
   <div class="header-user">
-    <div class="elo-badge" id="header-elo">⚡ 1200</div>
     <div class="user-badge" id="header-nick">PLAYER</div>
     <button class="btn-icon" onclick="showHistory()" title="Histórico">📋</button>
     <button class="btn-icon" onclick="openThemePicker()" title="Temas">🎨</button>
@@ -364,7 +352,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
     </div>
     <div style="display:flex;flex-direction:column;gap:12px">
       <div class="panel">
-        <div class="panel-header"><div class="dot"></div> TOP ELO GLOBAL</div>
+        <div class="panel-header"><div class="dot"></div> TOP GLOBAL</div>
         <div class="panel-body" style="padding:7px 11px">
           <ul class="rank-list" id="rank-list"><li class="rank-empty">Carregando...</li></ul>
         </div>
@@ -380,13 +368,13 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
       <div class="spec-banner" id="spec-banner" style="display:none">👁 VOCÊ ESTÁ ASSISTINDO</div>
       <div class="player-bar" id="bar-top">
         <div class="player-color" id="top-color"></div>
-        <div class="player-info"><div class="player-nick" id="top-nick">—</div><div class="player-elo" id="top-elo-bar"></div></div>
+        <div class="player-info"><div class="player-nick" id="top-nick">—</div></div>
         <div class="player-timer" id="top-timer">—</div>
       </div>
       <div id="board-wrap"><div id="chess-board"></div></div>
       <div class="player-bar" id="bar-bottom">
         <div class="player-color" id="bot-color"></div>
-        <div class="player-info"><div class="player-nick" id="bot-nick">—</div><div class="player-elo" id="bot-elo-bar"></div></div>
+        <div class="player-info"><div class="player-nick" id="bot-nick">—</div></div>
         <div class="player-timer" id="bot-timer">—</div>
       </div>
     </div>
@@ -457,7 +445,6 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
   <div class="modal">
     <div class="modal-icon" id="go-icon">🏆</div>
     <div class="modal-title" id="go-title">FIM DE JOGO</div>
-    <div class="elo-change" id="go-elo-change"></div>
     <div class="modal-body" id="go-body">...</div>
     <div class="modal-actions">
       <button class="btn-modal secondary" onclick="backToLobby()">LOBBY</button>
@@ -550,14 +537,6 @@ function playSound(type){
 /* ── PIECES ─────────────────────────────────────────── */
 const PIECES={wK:'♔',wQ:'♕',wR:'♖',wB:'♗',wN:'♘',wP:'♙',bK:'♚',bQ:'♛',bR:'♜',bB:'♝',bN:'♞',bP:'♟'};
 
-/* ── ELO ────────────────────────────────────────────── */
-function calcElo(rA,rB,score,k=32){
-  const exp=1/(1+Math.pow(10,(rB-rA)/400));
-  const dA=Math.round(k*(score-exp));
-  const dB=Math.round(k*((1-score)-(1-exp)));
-  return{dA,dB,newA:rA+dA,newB:rB+dB};
-}
-
 /* ── STATE ──────────────────────────────────────────── */
 let currentUser=null,roomCode=null,myColor=null,chess=null;
 let gameUnsub=null,rankUnsub=null,liveUnsub=null,chatUnsub=null;
@@ -588,7 +567,7 @@ window.doLogin=async()=>{
     if(!s.exists())return showMsg('Nick não encontrado.','error');
     const u=s.val();
     if(u.pass!==hashPass(pass))return showMsg('Senha incorreta.','error');
-    setUser({nick,wins:u.wins||0,elo:u.elo||1200});
+    setUser({nick,wins:u.wins||0});
   }catch(e){showMsg('Erro: '+e.message,'error');}
 };
 window.doRegister=async()=>{
@@ -600,7 +579,7 @@ window.doRegister=async()=>{
   try{
     const s=await get(ref(db,'/users/'+nick));
     if(s.exists())return showMsg('Nick já em uso.','error');
-    await set(ref(db,'/users/'+nick),{pass:hashPass(pass),wins:0,elo:1200,created:Date.now()});
+    await set(ref(db,'/users/'+nick),{pass:hashPass(pass),wins:0,created:Date.now()});
     showMsg('Conta criada! Faça login.','success');
     setTimeout(()=>switchTab('login'),1200);
   }catch(e){showMsg('Erro: '+e.message,'error');}
@@ -609,7 +588,6 @@ function setUser(u){
   currentUser=u;
   localStorage.setItem('cc_user',JSON.stringify(u));
   document.getElementById('header-nick').textContent=u.nick.toUpperCase();
-  document.getElementById('header-elo').textContent='⚡'+(u.elo||1200);
   showScreen('lobby');
   loadRanking();
   loadLiveRooms();
@@ -719,11 +697,11 @@ function loadRanking(){
     const el=document.getElementById('rank-list');
     if(!snap.exists()){el.innerHTML='<li class="rank-empty">Nenhum jogador ainda.</li>';return;}
     const users=[];
-    snap.forEach(c=>{const u=c.val();users.push({nick:c.key,wins:u.wins||0,elo:u.elo||1200});});
-    users.sort((a,b)=>b.elo-a.elo);
+    snap.forEach(c=>{const u=c.val();users.push({nick:c.key,wins:u.wins||0});});
+    users.sort((a,b)=>b.wins-a.wins);
     el.innerHTML=users.slice(0,10).map((u,i)=>{
       const cls=i===0?'gold':i===1?'silver':i===2?'bronze':'';
-      return`<li class="rank-item"><div class="rank-pos ${cls}">${i+1}</div><div class="rank-name">${u.nick}</div><div class="rank-elo">⚡${u.elo}</div><div class="rank-wins">${u.wins}<span>W</span></div></li>`;
+      return`<li class="rank-item"><div class="rank-pos ${cls}">${i+1}</div><div class="rank-name">${u.nick}</div><div class="rank-wins">${u.wins}<span>W</span></div></li>`;
     }).join('');
   });
 }
@@ -740,12 +718,9 @@ function loadHistory(){
   el.innerHTML=hist.slice().reverse().map((g,ri)=>{
     const res=g.result==='win'?'win':g.result==='loss'?'loss':'draw';
     const icon=res==='win'?'🏆':res==='loss'?'💀':'🤝';
-    const d=g.eloDelta||0;
-    const sign=d>0?'+':d===0?'+0':'';
-    const cls=d>0?'pos':d<0?'neg':'';
     const date=new Date(g.ts).toLocaleDateString('pt-BR');
     const origIdx=hist.length-1-ri;
-    return`<div class="history-item" onclick="replayHistGame(${origIdx})"><div class="history-result ${res}">${icon}</div><div class="history-info"><div class="history-opp">vs <strong>${g.opp||'?'}</strong></div><div class="history-meta">${date} · ${g.reason||''} · ${g.timeName||''}</div></div><div class="history-elo-delta ${cls}">${sign}${d}</div></div>`;
+    return`<div class="history-item" onclick="replayHistGame(${origIdx})"><div class="history-result ${res}">${icon}</div><div class="history-info"><div class="history-opp">vs <strong>${g.opp||'?'}</strong></div><div class="history-meta">${date} · ${g.reason||''} · ${g.timeName||''}</div></div></div>`;
   }).join('');
 }
 function saveHistory(entry){
@@ -784,8 +759,6 @@ window.replayHistGame=idx=>{
   document.getElementById('top-color').className='player-color black';
   document.getElementById('top-timer').textContent='';
   document.getElementById('bot-timer').textContent='';
-  document.getElementById('bot-elo-bar').textContent='';
-  document.getElementById('top-elo-bar').textContent='';
   document.getElementById('bar-bottom').classList.remove('active-turn');
   document.getElementById('bar-top').classList.remove('active-turn');
   document.getElementById('chat-messages').innerHTML='';
@@ -843,8 +816,6 @@ function startGame(code,roomData,color){
   document.getElementById('top-nick').textContent=oppN;
   document.getElementById('bot-color').className='player-color '+(myC==='w'?'white':'black');
   document.getElementById('top-color').className='player-color '+(myC==='w'?'black':'white');
-  document.getElementById('bot-elo-bar').textContent=isSpectator?'':('⚡'+(currentUser.elo||1200));
-  document.getElementById('top-elo-bar').textContent='';
   document.getElementById('room-code-display').textContent=code;
   document.getElementById('time-label-display').textContent=roomData.timeName||'';
 
@@ -1068,8 +1039,7 @@ window.respondDraw=async accept=>{
   if(!s.exists())return;
   const r=s.val();
   gameActive=false;stopTimerLoop();
-  const ed=await updateEloStats(null,null,r.white,r.black);
-  await update(ref(db,'/rooms/'+roomCode),{status:'finished',winner:null,winnerNick:null,reason:'empate acordado',drawOffer:null,eloDeltas:ed||{}});
+  await update(ref(db,'/rooms/'+roomCode),{status:'finished',winner:null,winnerNick:null,reason:'empate acordado',drawOffer:null});
 };
 
 /* ── GAME OVER ──────────────────────────────────────── */
@@ -1083,8 +1053,7 @@ async function handleGameOver(r){
 
   if(!isSpectator&&wasActive){
     const snap=await get(ref(db,'/users/'+currentUser.nick));
-    if(snap.exists()){const u=snap.val();currentUser.elo=u.elo||1200;localStorage.setItem('cc_user',JSON.stringify(currentUser));}
-    document.getElementById('header-elo').textContent='⚡'+currentUser.elo;
+    if(snap.exists()){const u=snap.val();currentUser.wins=u.wins||0;localStorage.setItem('cc_user',JSON.stringify(currentUser));}
   }
 
   const iWon=r.winner&&r.winner===myColor;
@@ -1093,19 +1062,11 @@ async function handleGameOver(r){
   document.getElementById('go-title').textContent=isDraw?'EMPATE':iWon?'VITÓRIA!':'DERROTA';
   document.getElementById('go-body').textContent=isDraw?'A partida terminou empatada.':(r.winnerNick||'?')+' venceu por '+(r.reason||'xeque-mate')+'.';
 
-  const ecEl=document.getElementById('go-elo-change');
-  if(r.eloDeltas&&!isSpectator){
-    const d=myColor==='w'?r.eloDeltas.w:r.eloDeltas.b;
-    ecEl.className='elo-change '+(d>0?'pos':d<0?'neg':'neu');
-    ecEl.textContent=(d>=0?'+':'')+d+' ELO';
-  } else ecEl.textContent='';
-
   if(!isSpectator){
     const snap2=await get(ref(db,'/rooms/'+roomCode));
     const rd=snap2.exists()?snap2.val():r;
     const oppNick=myColor==='w'?rd.black:rd.white;
-    const myD=r.eloDeltas?(myColor==='w'?r.eloDeltas.w:r.eloDeltas.b):0;
-    saveHistory({ts:Date.now(),opp:oppNick||'?',result:isDraw?'draw':iWon?'win':'loss',reason:r.reason||'',timeName:rd.timeName||'',eloDelta:myD,moves:fullGameMoves});
+    saveHistory({ts:Date.now(),opp:oppNick||'?',result:isDraw?'draw':iWon?'win':'loss',reason:r.reason||'',timeName:rd.timeName||'',moves:fullGameMoves});
     document.getElementById('btn-rematch').style.display='';
     document.getElementById('btn-rematch').textContent='🔄 PEDIR REVANCHE';
     document.getElementById('btn-rematch').onclick=requestRematch;
@@ -1121,8 +1082,13 @@ async function finishGame(winnerColor,winnerNick,whiteNick,blackNick,reason){
   const snap=await get(ref(db,'/rooms/'+roomCode));
   if(!snap.exists())return;
   if(snap.val().status==='finished')return;
-  const ed=await updateEloStats(winnerColor,winnerNick,whiteNick,blackNick);
-  await update(ref(db,'/rooms/'+roomCode),{status:'finished',winner:winnerColor,winnerNick,reason,eloDeltas:ed||{}});
+  await updateWins(winnerColor,winnerNick,whiteNick,blackNick);
+  await update(ref(db,'/rooms/'+roomCode),{status:'finished',winner:winnerColor,winnerNick,reason});
+}
+async function updateWins(winnerColor,winnerNick,wn,bn){
+  if(!winnerNick)return;
+  const sw=await get(ref(db,'/users/'+winnerNick));
+  if(sw.exists())await update(ref(db,'/users/'+winnerNick),{wins:(sw.val().wins||0)+1});
 }
 async function pushGameOver(winnerColor,reason){
   if(!roomCode||!chess)return;
@@ -1130,19 +1096,6 @@ async function pushGameOver(winnerColor,reason){
   const r=s.val();
   await finishGame(winnerColor,winnerColor==='w'?r.white:r.black,r.white,r.black,reason);
 }
-async function updateEloStats(winnerColor,winnerNick,wn,bn){
-  if(!wn||!bn)return{};
-  const [sw,sb]=await Promise.all([get(ref(db,'/users/'+wn)),get(ref(db,'/users/'+bn))]);
-  if(!sw.exists()||!sb.exists())return{};
-  const uw=sw.val(),ub=sb.val();
-  const score=winnerColor===null?0.5:winnerColor==='w'?1:0;
-  const {dA,dB,newA,newB}=calcElo(uw.elo||1200,ub.elo||1200,score);
-  const updW={elo:newA};if(winnerColor==='w')updW.wins=(uw.wins||0)+1;
-  const updB={elo:newB};if(winnerColor==='b')updB.wins=(ub.wins||0)+1;
-  await Promise.all([update(ref(db,'/users/'+wn),updW),update(ref(db,'/users/'+bn),updB)]);
-  return{w:dA,b:dB};
-}
-
 /* ── RESIGN ─────────────────────────────────────────── */
 window.resignGame=async()=>{
   if(!gameActive||!roomCode)return;
@@ -1151,8 +1104,8 @@ window.resignGame=async()=>{
   const wc=myColor==='w'?'b':'w';
   const wn=wc==='w'?r.white:r.black;
   gameActive=false;stopTimerLoop();
-  const ed=await updateEloStats(wc,wn,r.white,r.black);
-  await update(ref(db,'/rooms/'+roomCode),{status:'finished',winner:wc,winnerNick:wn,reason:'abandono',eloDeltas:ed||{}});
+  const ed=await updateWins(wc,wn,r.white,r.black);
+  await update(ref(db,'/rooms/'+roomCode),{status:'finished',winner:wc,winnerNick:wn,reason:'abandono'});
 };
 
 /* ── REMATCH ────────────────────────────────────────── */
