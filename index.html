@@ -649,9 +649,54 @@ window.startVsStockfish=color=>{
 };
 
 function initStockfish(){
-  if(sfWorker){sfWorker.active=false;sfWorker=null;}
-  // Stockfish via Lichess open API — sem CORS, sem Worker
-  sfWorker={active:true};
+  if(sfWorker){try{sfWorker.w.terminate();}catch(e){}sfWorker=null;}
+
+  // Carrega o script do Stockfish e cria um Worker via Blob para evitar CORS
+  fetch('https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js')
+    .then(r=>r.text())
+    .then(code=>{
+      const blob=new Blob([code],{type:'application/javascript'});
+      const url=URL.createObjectURL(blob);
+      const w=new Worker(url);
+      sfWorker={w,active:true,seq:0,ready:false};
+
+      w.onmessage=e=>{
+        const line=e.data;
+        if(!sfWorker||!sfWorker.active)return;
+        if(line==='uciok'||line.startsWith('readyok')){
+          sfWorker.ready=true;
+          // Se havia uma jogada pendente, dispara agora
+          if(sfWorker.pendingFen) _sendPosition(sfWorker.pendingFen,sfWorker.pendingDepth);
+          return;
+        }
+        if(line.startsWith('bestmove')){
+          const mv=line.split(' ')[1];
+          if(!mv||mv==='(none)')return;
+          if(!chess||!gameActive||chess.turn()!==sfColor)return;
+          document.getElementById('sf-thinking').style.display='none';
+          applyBotMove(mv);
+        }
+      };
+
+      w.onerror=err=>{
+        console.error('SF worker error',err);
+        toast('Erro no Stockfish — tente novamente.');
+      };
+
+      w.postMessage('uci');
+      w.postMessage('setoption name Skill Level value '+sfLevel);
+      w.postMessage('ucinewgame');
+      w.postMessage('isready');
+      URL.revokeObjectURL(url);
+    })
+    .catch(()=>toast('Não foi possível carregar o Stockfish. Verifique sua conexão.'));
+}
+
+function _sendPosition(fen,depth){
+  if(!sfWorker||!sfWorker.w)return;
+  sfWorker.w.postMessage('position fen '+fen);
+  sfWorker.w.postMessage('go depth '+depth);
+  sfWorker.pendingFen=null;
 }
 
 function askStockfish(){
@@ -660,41 +705,15 @@ function askStockfish(){
   document.getElementById('sf-thinking').style.display='';
 
   const fen=chess.fen();
-  const depth=Math.min(sfLevel+1,18);
-  const token=sfWorker.token=(sfWorker.token||0)+1;
-  const myToken=token;
+  const depth=Math.max(1,Math.min(sfLevel+1,15));
 
-  // Use Lichess cloud evaluation API
-  fetch(`https://lichess.org/api/cloud-eval?fen=${encodeURIComponent(fen)}&multiPv=1`,
-    {headers:{Accept:'application/json'}})
-    .then(r=>r.ok?r.json():Promise.reject('http'))
-    .then(data=>{
-      if(!sfWorker||!sfWorker.active||sfWorker.token!==myToken||!gameActive)return;
-      // pvs[0].moves is a space-separated list of UCI moves
-      const firstMove=(data.pvs&&data.pvs[0]&&data.pvs[0].moves||'').split(' ')[0];
-      if(!firstMove)throw new Error('no move');
-      applyBotMove(firstMove);
-    })
-    .catch(()=>{
-      // Fallback: stockfish.online
-      fetch(`https://stockfish.online/api/s/v2.php?fen=${encodeURIComponent(fen)}&depth=${depth}`)
-        .then(r=>r.ok?r.json():Promise.reject('http'))
-        .then(data=>{
-          if(!sfWorker||!sfWorker.active||sfWorker.token!==myToken||!gameActive)return;
-          const raw=(data.bestmove||'').replace('bestmove','').trim().split(' ')[0];
-          if(!raw||raw==='(none)')throw new Error('no move');
-          applyBotMove(raw);
-        })
-        .catch(()=>{
-          if(!sfWorker||!sfWorker.active||sfWorker.token!==myToken||!gameActive)return;
-          document.getElementById('sf-thinking').style.display='none';
-          // Final fallback: random move
-          const moves=chess.moves({verbose:true});
-          if(!moves.length)return;
-          const mv=moves[Math.floor(Math.random()*moves.length)];
-          applyBotMove(mv.from+mv.to+(mv.promotion||''));
-        });
-    });
+  if(sfWorker.ready){
+    _sendPosition(fen,depth);
+  } else {
+    // Worker ainda inicializando — guarda para enviar quando ficar pronto
+    sfWorker.pendingFen=fen;
+    sfWorker.pendingDepth=depth;
+  }
 }
 
 function applyBotMove(uci){
@@ -729,7 +748,7 @@ function checkLocalGameOver(){
 function endBotGame(winnerColor,reason){
   if(!gameActive)return;
   gameActive=false;stopTimerLoop();
-  if(sfWorker){sfWorker.active=false;sfWorker=null;}
+  if(sfWorker){sfWorker.active=false;try{sfWorker.w.terminate();}catch(e){}sfWorker=null;}
   playSound('end');
   const iWon=winnerColor===myColor;
   const isDraw=!winnerColor;
@@ -804,7 +823,7 @@ function setUser(u){
 }
 window.logout=()=>{
   if(gameActive)resignGame();
-  if(sfWorker){sfWorker.active=false;sfWorker=null;}
+  if(sfWorker){sfWorker.active=false;try{sfWorker.w.terminate();}catch(e){}sfWorker=null;}
   vsStockfish=false;
   currentUser=null;
   localStorage.removeItem('cc_user');
@@ -1424,7 +1443,7 @@ window.applyTheme=(t,el)=>{
 window.backToLobby=()=>{
   document.getElementById('overlay-gameover').classList.remove('open');
   gameActive=false;replayMode=false;stopTimerLoop();
-  if(sfWorker){sfWorker.active=false;sfWorker=null;}
+  if(sfWorker){sfWorker.active=false;try{sfWorker.w.terminate();}catch(e){}sfWorker=null;}
   vsStockfish=false;
   if(gameUnsub){gameUnsub();gameUnsub=null;}
   if(chatUnsub){chatUnsub();chatUnsub=null;}
