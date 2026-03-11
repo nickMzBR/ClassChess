@@ -555,14 +555,6 @@ await new Promise(res=>{
   s.onload=res; document.head.appendChild(s);
 });
 
-/* Stockfish.js — single-thread, sem Worker */
-await new Promise((res,rej)=>{
-  if(window.STOCKFISH){res();return;}
-  const s=document.createElement('script');
-  s.src='https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js';
-  s.onload=res; s.onerror=rej; document.head.appendChild(s);
-});
-
 /* ── AUDIO ──────────────────────────────────────────── */
 let actx=null;
 function ensureAudio(){if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();}
@@ -657,31 +649,41 @@ window.startVsStockfish=color=>{
 };
 
 function initStockfish(){
-  if(sfWorker){sfWorker.active=false;sfWorker=null;}
+  if(sfWorker){sfWorker.active=false;try{sfWorker.w&&sfWorker.w.terminate();}catch(e){}sfWorker=null;}
 
-  if(typeof STOCKFISH!=='function'){
-    toast('Stockfish não carregou. Recarregue a página.');
+  // Cria Worker inline via Blob que importa o Stockfish do jsDelivr
+  const workerCode=`
+    importScripts('https://cdn.jsdelivr.net/npm/stockfish@16.0.0/src/stockfish-nnue-16-single.js');
+    var sf=null;
+    Stockfish().then(function(s){
+      sf=s;
+      sf.addMessageListener(function(line){ postMessage(line); });
+      postMessage('__ready__');
+    });
+    onmessage=function(e){ if(sf) sf.uci(e.data); };
+  `;
+  let w;
+  try{
+    const blob=new Blob([workerCode],{type:'text/javascript'});
+    w=new Worker(URL.createObjectURL(blob));
+  }catch(e){
+    toast('Worker não suportado. Use Chrome/Firefox.');
     return;
   }
 
-  const engine=STOCKFISH();
-  sfWorker={engine,active:true,ready:false,pendingFen:null,pendingDepth:1};
+  sfWorker={w,active:true,ready:false,pendingFen:null,pendingDepth:1};
 
-  engine.onmessage=function(line){
-    if(typeof line==='object'&&line.data) line=line.data;
-    if(!sfWorker||!sfWorker.active) return;
-
-    if(line==='uciok'){
-      engine.postMessage('setoption name Skill Level value '+sfLevel);
-      engine.postMessage('ucinewgame');
-      engine.postMessage('isready');
-      return;
-    }
-    if(line.startsWith('readyok')){
+  w.onmessage=function(e){
+    const line=e.data;
+    if(!sfWorker||!sfWorker.active)return;
+    if(line==='__ready__'){
+      w.postMessage('uci');
+      w.postMessage('setoption name Skill Level value '+sfLevel);
+      w.postMessage('ucinewgame');
       sfWorker.ready=true;
       if(sfWorker.pendingFen){
-        engine.postMessage('position fen '+sfWorker.pendingFen);
-        engine.postMessage('go depth '+sfWorker.pendingDepth);
+        w.postMessage('position fen '+sfWorker.pendingFen);
+        w.postMessage('go depth '+sfWorker.pendingDepth);
         sfWorker.pendingFen=null;
       }
       return;
@@ -695,7 +697,10 @@ function initStockfish(){
     }
   };
 
-  engine.postMessage('uci');
+  w.onerror=function(e){
+    toast('Erro ao carregar engine. Verifique a conexão.');
+    sfWorker=null;
+  };
 }
 
 function askStockfish(){
@@ -707,8 +712,8 @@ function askStockfish(){
   const depth=Math.max(1,Math.min(sfLevel+1,15));
 
   if(sfWorker.ready){
-    sfWorker.engine.postMessage('position fen '+fen);
-    sfWorker.engine.postMessage('go depth '+depth);
+    sfWorker.w.postMessage('position fen '+fen);
+    sfWorker.w.postMessage('go depth '+depth);
   } else {
     sfWorker.pendingFen=fen;
     sfWorker.pendingDepth=depth;
@@ -747,7 +752,7 @@ function checkLocalGameOver(){
 function endBotGame(winnerColor,reason){
   if(!gameActive)return;
   gameActive=false;stopTimerLoop();
-  if(sfWorker){sfWorker.active=false;sfWorker=null;}
+  if(sfWorker){sfWorker.active=false;try{sfWorker.w&&sfWorker.w.terminate();}catch(e){}sfWorker=null;}
   playSound('end');
   const iWon=winnerColor===myColor;
   const isDraw=!winnerColor;
@@ -822,7 +827,7 @@ function setUser(u){
 }
 window.logout=()=>{
   if(gameActive)resignGame();
-  if(sfWorker){sfWorker.active=false;sfWorker=null;}
+  if(sfWorker){sfWorker.active=false;try{sfWorker.w&&sfWorker.w.terminate();}catch(e){}sfWorker=null;}
   vsStockfish=false;
   currentUser=null;
   localStorage.removeItem('cc_user');
@@ -1442,7 +1447,7 @@ window.applyTheme=(t,el)=>{
 window.backToLobby=()=>{
   document.getElementById('overlay-gameover').classList.remove('open');
   gameActive=false;replayMode=false;stopTimerLoop();
-  if(sfWorker){sfWorker.active=false;sfWorker=null;}
+  if(sfWorker){sfWorker.active=false;try{sfWorker.w&&sfWorker.w.terminate();}catch(e){}sfWorker=null;}
   vsStockfish=false;
   if(gameUnsub){gameUnsub();gameUnsub=null;}
   if(chatUnsub){chatUnsub();chatUnsub=null;}
