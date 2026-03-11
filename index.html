@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ClassChess</title>
+<title>ClassChess — Xadrez Online</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
@@ -555,6 +555,14 @@ await new Promise(res=>{
   s.onload=res; document.head.appendChild(s);
 });
 
+/* Stockfish.js — single-thread, sem Worker */
+await new Promise((res,rej)=>{
+  if(window.STOCKFISH){res();return;}
+  const s=document.createElement('script');
+  s.src='https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js';
+  s.onload=res; s.onerror=rej; document.head.appendChild(s);
+});
+
 /* ── AUDIO ──────────────────────────────────────────── */
 let actx=null;
 function ensureAudio(){if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();}
@@ -649,54 +657,45 @@ window.startVsStockfish=color=>{
 };
 
 function initStockfish(){
-  if(sfWorker){try{sfWorker.w.terminate();}catch(e){}sfWorker=null;}
+  if(sfWorker){sfWorker.active=false;sfWorker=null;}
 
-  // Carrega o script do Stockfish e cria um Worker via Blob para evitar CORS
-  fetch('https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js')
-    .then(r=>r.text())
-    .then(code=>{
-      const blob=new Blob([code],{type:'application/javascript'});
-      const url=URL.createObjectURL(blob);
-      const w=new Worker(url);
-      sfWorker={w,active:true,seq:0,ready:false};
+  if(typeof STOCKFISH!=='function'){
+    toast('Stockfish não carregou. Recarregue a página.');
+    return;
+  }
 
-      w.onmessage=e=>{
-        const line=e.data;
-        if(!sfWorker||!sfWorker.active)return;
-        if(line==='uciok'||line.startsWith('readyok')){
-          sfWorker.ready=true;
-          // Se havia uma jogada pendente, dispara agora
-          if(sfWorker.pendingFen) _sendPosition(sfWorker.pendingFen,sfWorker.pendingDepth);
-          return;
-        }
-        if(line.startsWith('bestmove')){
-          const mv=line.split(' ')[1];
-          if(!mv||mv==='(none)')return;
-          if(!chess||!gameActive||chess.turn()!==sfColor)return;
-          document.getElementById('sf-thinking').style.display='none';
-          applyBotMove(mv);
-        }
-      };
+  const engine=STOCKFISH();
+  sfWorker={engine,active:true,ready:false,pendingFen:null,pendingDepth:1};
 
-      w.onerror=err=>{
-        console.error('SF worker error',err);
-        toast('Erro no Stockfish — tente novamente.');
-      };
+  engine.onmessage=function(line){
+    if(typeof line==='object'&&line.data) line=line.data;
+    if(!sfWorker||!sfWorker.active) return;
 
-      w.postMessage('uci');
-      w.postMessage('setoption name Skill Level value '+sfLevel);
-      w.postMessage('ucinewgame');
-      w.postMessage('isready');
-      URL.revokeObjectURL(url);
-    })
-    .catch(()=>toast('Não foi possível carregar o Stockfish. Verifique sua conexão.'));
-}
+    if(line==='uciok'){
+      engine.postMessage('setoption name Skill Level value '+sfLevel);
+      engine.postMessage('ucinewgame');
+      engine.postMessage('isready');
+      return;
+    }
+    if(line.startsWith('readyok')){
+      sfWorker.ready=true;
+      if(sfWorker.pendingFen){
+        engine.postMessage('position fen '+sfWorker.pendingFen);
+        engine.postMessage('go depth '+sfWorker.pendingDepth);
+        sfWorker.pendingFen=null;
+      }
+      return;
+    }
+    if(line.startsWith('bestmove')){
+      const mv=line.split(' ')[1];
+      if(!mv||mv==='(none)')return;
+      if(!chess||!gameActive||chess.turn()!==sfColor)return;
+      document.getElementById('sf-thinking').style.display='none';
+      applyBotMove(mv);
+    }
+  };
 
-function _sendPosition(fen,depth){
-  if(!sfWorker||!sfWorker.w)return;
-  sfWorker.w.postMessage('position fen '+fen);
-  sfWorker.w.postMessage('go depth '+depth);
-  sfWorker.pendingFen=null;
+  engine.postMessage('uci');
 }
 
 function askStockfish(){
@@ -708,9 +707,9 @@ function askStockfish(){
   const depth=Math.max(1,Math.min(sfLevel+1,15));
 
   if(sfWorker.ready){
-    _sendPosition(fen,depth);
+    sfWorker.engine.postMessage('position fen '+fen);
+    sfWorker.engine.postMessage('go depth '+depth);
   } else {
-    // Worker ainda inicializando — guarda para enviar quando ficar pronto
     sfWorker.pendingFen=fen;
     sfWorker.pendingDepth=depth;
   }
@@ -748,7 +747,7 @@ function checkLocalGameOver(){
 function endBotGame(winnerColor,reason){
   if(!gameActive)return;
   gameActive=false;stopTimerLoop();
-  if(sfWorker){sfWorker.active=false;try{sfWorker.w.terminate();}catch(e){}sfWorker=null;}
+  if(sfWorker){sfWorker.active=false;sfWorker=null;}
   playSound('end');
   const iWon=winnerColor===myColor;
   const isDraw=!winnerColor;
@@ -823,7 +822,7 @@ function setUser(u){
 }
 window.logout=()=>{
   if(gameActive)resignGame();
-  if(sfWorker){sfWorker.active=false;try{sfWorker.w.terminate();}catch(e){}sfWorker=null;}
+  if(sfWorker){sfWorker.active=false;sfWorker=null;}
   vsStockfish=false;
   currentUser=null;
   localStorage.removeItem('cc_user');
@@ -1443,7 +1442,7 @@ window.applyTheme=(t,el)=>{
 window.backToLobby=()=>{
   document.getElementById('overlay-gameover').classList.remove('open');
   gameActive=false;replayMode=false;stopTimerLoop();
-  if(sfWorker){sfWorker.active=false;try{sfWorker.w.terminate();}catch(e){}sfWorker=null;}
+  if(sfWorker){sfWorker.active=false;sfWorker=null;}
   vsStockfish=false;
   if(gameUnsub){gameUnsub();gameUnsub=null;}
   if(chatUnsub){chatUnsub();chatUnsub=null;}
