@@ -173,16 +173,19 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 .game-status-text.check{color:var(--danger);font-size:15px;animation:shake .3s;}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
 
-.moves-log{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
-.moves-body{padding:5px 9px;max-height:160px;overflow-y:auto;font-family:'Share Tech Mono',monospace;font-size:11px;}
-.move-row{display:flex;gap:5px;padding:2px 0;}
-.move-num{color:var(--text2);width:20px;flex-shrink:0;}
-.move-w,.move-b{flex:1;color:var(--text);cursor:pointer;border-radius:3px;padding:0 2px;}
-.move-w:hover,.move-b:hover{background:var(--blue-dim);color:var(--blue);}
-.move-w.hl,.move-b.hl{background:var(--blue-dim);color:var(--blue);}
-.replay-controls{display:flex;gap:5px;justify-content:center;padding:7px;border-top:1px solid var(--border);}
-.btn-replay{padding:5px 10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:6px;cursor:pointer;font-size:13px;transition:all .2s;}
-.btn-replay:hover{border-color:var(--blue);color:var(--blue);}
+.moves-log{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;}
+.moves-body{padding:6px 4px;flex:1;overflow-y:auto;font-family:'Share Tech Mono',monospace;font-size:12px;max-height:180px;}
+.move-row{display:flex;align-items:center;border-radius:4px;}
+.move-row:hover{background:rgba(255,255,255,.04);}
+.move-num{color:var(--text2);width:26px;text-align:right;padding-right:6px;flex-shrink:0;font-size:11px;}
+.move-w,.move-b{flex:1;padding:3px 6px;border-radius:4px;cursor:pointer;transition:background .15s;color:var(--text);}
+.move-w:hover,.move-b:hover{background:rgba(100,160,255,.15);color:var(--blue);}
+.move-w.hl,.move-b.hl{background:var(--blue) !important;color:#fff !important;font-weight:700;}
+.replay-controls{display:flex;gap:4px;justify-content:center;align-items:center;padding:7px 8px;border-top:1px solid var(--border);background:var(--bg3);}
+.btn-replay{width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:var(--bg2);border:1px solid var(--border);color:var(--text2);border-radius:6px;cursor:pointer;font-size:14px;transition:all .15s;}
+.btn-replay:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-dim);}
+.replay-progress{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;cursor:pointer;}
+.replay-progress-bar{height:100%;background:var(--blue);border-radius:2px;transition:width .2s;}
 
 /* Chat */
 .chat-box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;}
@@ -276,6 +279,44 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
   #screen-game{padding:5px;}
   #board-wrap{max-width:calc(100vw - 10px);}
 }
+
+/* ── ANALYSIS SCREEN ────────────────────────────────── */
+#screen-analysis{padding:14px;max-width:680px;margin:0 auto;}
+.analysis-header{text-align:center;margin-bottom:14px;}
+.analysis-title{font-family:'Orbitron',monospace;font-size:18px;color:var(--blue);font-weight:700;letter-spacing:2px;}
+.analysis-sub{font-size:12px;color:var(--text2);margin-top:4px;}
+.analysis-players{display:flex;align-items:center;justify-content:space-between;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:10px;}
+.analysis-player{text-align:center;min-width:90px;}
+.analysis-player-name{font-weight:700;font-size:14px;color:var(--text);}
+.analysis-player-acc{font-family:'Orbitron',monospace;font-size:22px;font-weight:900;margin-top:4px;}
+.analysis-player-acc.white{color:#f0ede0;text-shadow:0 0 12px rgba(240,237,224,.3);}
+.analysis-player-acc.black{color:#aab0c0;}
+.analysis-vs{font-size:12px;color:var(--text2);font-weight:600;}
+.eval-chart-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:10px;position:relative;}
+.eval-chart-label{font-size:10px;color:var(--text2);margin-bottom:6px;font-family:'Share Tech Mono',monospace;}
+#eval-chart{width:100%;height:80px;display:block;cursor:pointer;}
+.eval-chart-cursor{position:absolute;top:28px;bottom:10px;width:2px;background:var(--blue);pointer-events:none;opacity:0;transition:left .15s;}
+.analysis-stats{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:14px;}
+.stat-row{display:grid;grid-template-columns:1fr 36px 1fr;align-items:center;padding:9px 14px;border-bottom:1px solid var(--border);}
+.stat-row:last-child{border-bottom:none;}
+.stat-val{font-family:'Orbitron',monospace;font-size:16px;font-weight:700;}
+.stat-val.w{text-align:right;color:var(--text);}
+.stat-val.b{text-align:left;color:var(--text);}
+.stat-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;margin:0 auto;}
+.si-brilliant{background:#1bada6;color:#fff;}
+.si-great{background:#5b8dd9;color:#fff;}
+.si-best{background:#6abf69;color:#fff;}
+.si-good{background:#96bc4b;color:#fff;}
+.si-inaccuracy{background:#f0a030;color:#fff;}
+.si-mistake{background:#e07050;color:#fff;}
+.si-blunder{background:#cc3333;color:#fff;}
+.analysis-loading{text-align:center;padding:30px;color:var(--text2);}
+.analysis-loading-bar{width:100%;height:4px;background:var(--border);border-radius:2px;margin-top:12px;overflow:hidden;}
+.analysis-loading-fill{height:100%;background:var(--blue);border-radius:2px;transition:width .3s;}
+.btn-start-review{width:100%;padding:16px;background:linear-gradient(135deg,#2a8a3a,#3dbd52);color:#fff;border:none;border-radius:10px;font-family:'Orbitron',monospace;font-size:15px;font-weight:700;letter-spacing:2px;cursor:pointer;transition:all .2s;margin-top:4px;}
+.btn-start-review:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(60,180,80,.3);}
+.btn-start-review:disabled{background:var(--bg3);color:var(--text2);cursor:not-allowed;transform:none;box-shadow:none;}
+
 </style>
 </head>
 <body>
@@ -419,14 +460,20 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
       </div>
       <div id="draw-offer-area"></div>
       <div class="moves-log">
-        <div class="panel-header" style="border-radius:0">MOVIMENTOS <span id="replay-mode-label" style="font-size:10px;color:var(--text2);margin-left:auto;display:none">● REPLAY</span></div>
+        <div class="panel-header" style="border-radius:0;display:flex;align-items:center">
+          MOVIMENTOS
+          <span id="replay-mode-label" style="font-size:10px;color:var(--blue);margin-left:auto;display:none;font-family:'Share Tech Mono',monospace">● REVISÃO</span>
+        </div>
         <div class="moves-body" id="moves-body"></div>
         <div class="replay-controls" id="replay-controls" style="display:none">
-          <button class="btn-replay" onclick="replayGo(0)">⏮</button>
-          <button class="btn-replay" onclick="replayStep(-1)">◀</button>
-          <button class="btn-replay" onclick="replayStep(1)">▶</button>
-          <button class="btn-replay" onclick="replayGoEnd()">⏭</button>
-          <button class="btn-replay" onclick="exitReplay()" style="color:var(--danger)">✕</button>
+          <button class="btn-replay" onclick="replayGo(0)" title="Início">⏮</button>
+          <button class="btn-replay" onclick="replayStep(-1)" title="Anterior">◀</button>
+          <div class="replay-progress" id="replay-progress" onclick="replayClickProgress(event)">
+            <div class="replay-progress-bar" id="replay-progress-bar" style="width:0%"></div>
+          </div>
+          <button class="btn-replay" onclick="replayStep(1)" title="Próximo">▶</button>
+          <button class="btn-replay" onclick="replayGoEnd()" title="Fim">⏭</button>
+          <button class="btn-replay" onclick="exitReplay()" title="Sair" style="color:var(--danger);border-color:var(--danger)">✕</button>
         </div>
       </div>
       <div class="chat-box">
@@ -455,6 +502,44 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
   <div class="history-list" id="history-list"><div class="history-empty">Nenhuma partida registrada ainda.</div></div>
 </div>
 
+<!-- ANALYSIS -->
+<div class="screen" id="screen-analysis">
+  <div class="analysis-header">
+    <div class="analysis-title">🔍 ANÁLISE DA PARTIDA</div>
+    <div class="analysis-sub" id="analysis-sub">Calculando avaliações...</div>
+  </div>
+  <div id="analysis-loading" class="analysis-loading">
+    <div>⚙ Analisando posições com Stockfish...</div>
+    <div class="analysis-loading-bar"><div class="analysis-loading-fill" id="analysis-loading-fill" style="width:0%"></div></div>
+    <div style="font-size:11px;margin-top:8px;color:var(--text2)" id="analysis-loading-text">0 / 0</div>
+  </div>
+  <div id="analysis-content" style="display:none">
+    <div class="analysis-players">
+      <div class="analysis-player">
+        <div class="analysis-player-name" id="an-white-name">Brancas</div>
+        <div class="analysis-player-acc white" id="an-white-acc">—</div>
+        <div style="font-size:10px;color:var(--text2)">precisão</div>
+      </div>
+      <div class="analysis-vs">VS</div>
+      <div class="analysis-player">
+        <div class="analysis-player-name" id="an-black-name">Pretas</div>
+        <div class="analysis-player-acc black" id="an-black-acc">—</div>
+        <div style="font-size:10px;color:var(--text2)">precisão</div>
+      </div>
+    </div>
+    <div class="eval-chart-wrap">
+      <div class="eval-chart-label">AVALIAÇÃO AO LONGO DA PARTIDA (brancas ↑ pretas ↓)</div>
+      <canvas id="eval-chart" height="80"></canvas>
+      <div class="eval-chart-cursor" id="eval-cursor"></div>
+    </div>
+    <div class="analysis-stats" id="analysis-stats-table"></div>
+    <button class="btn-start-review" id="btn-start-review" onclick="startAnalysisReview()">COMEÇAR A REVISÃO</button>
+    <div style="text-align:center;margin-top:8px">
+      <button class="btn-back-sm" onclick="backToLobby()" style="margin:0 auto">← LOBBY</button>
+    </div>
+  </div>
+</div>
+
 <!-- WAITING OVERLAY -->
 <div class="overlay" id="overlay-wait">
   <div class="modal">
@@ -478,6 +563,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
     <div class="modal-body" id="go-body">...</div>
     <div class="modal-actions">
       <button class="btn-modal secondary" onclick="backToLobby()">LOBBY</button>
+      <button class="btn-modal primary" id="btn-review-game" onclick="reviewCurrentGame()">🔍 REVISAR</button>
       <button class="btn-modal gold" onclick="showHistoryFromGame()">📋 HISTÓRICO</button>
       <button class="btn-modal primary" id="btn-rematch" style="display:none">🔄 REVANCHE</button>
     </div>
@@ -1251,37 +1337,11 @@ window.replayHistGame=idx=>{
   const hist=JSON.parse(raw);
   const g=hist[idx];
   if(!g||!g.moves||!g.moves.length)return toast('Sem movimentos para este replay.');
-  isSpectator=true;replayMode=true;gameActive=false;
-  myColor='w';roomCode=null;
-  replayAllMoves=g.moves.slice();
-  replayIndex=0;
-  chess=new Chess();
-  document.getElementById('spec-banner').style.display='';
-  document.getElementById('spec-banner').textContent='🔁 REPLAY — vs '+g.opp+' · '+new Date(g.ts).toLocaleDateString('pt-BR');
-  document.getElementById('game-btns').style.display='none';
-  document.getElementById('btn-back-lobby').style.display='';
-  document.getElementById('replay-controls').style.display='';
-  document.getElementById('replay-mode-label').style.display='';
-  document.getElementById('room-code-display').textContent='REPLAY';
-  document.getElementById('time-label-display').textContent=g.timeName||'';
-  document.getElementById('bot-nick').textContent=currentUser.nick;
-  document.getElementById('top-nick').textContent=g.opp||'?';
-  document.getElementById('bot-color').className='player-color white';
-  document.getElementById('top-color').className='player-color black';
-  document.getElementById('top-timer').textContent='';
-  document.getElementById('bot-timer').textContent='';
-  document.getElementById('bar-bottom').classList.remove('active-turn');
-  document.getElementById('bar-top').classList.remove('active-turn');
-  document.getElementById('chat-messages').innerHTML='';
-  document.getElementById('draw-offer-area').innerHTML='';
-  renderBoard();renderMoves([]);
-  document.getElementById('game-status-text').className='game-status-text';
-  document.getElementById('game-status-text').textContent='Use ◀ ▶ para navegar nos movimentos';
-  showScreen('game');
+  window._analysisClassifications=null;
+  openAnalysis(g.moves.slice(), currentUser.nick, g.opp||'?');
 };
-window.replayStep=dir=>{
-  if(!replayMode)return;
-  replayIndex=Math.max(0,Math.min(replayAllMoves.length,replayIndex+dir));
+
+function _replayApply(){
   chess=new Chess();
   replayAllMoves.slice(0,replayIndex).forEach(m=>chess.move(m));
   lastFrom=null;lastTo=null;
@@ -1290,12 +1350,286 @@ window.replayStep=dir=>{
     if(h.length){lastFrom=h[h.length-1].from;lastTo=h[h.length-1].to;}
   }
   renderBoard();
-  renderMoves(chess.history(),replayIndex-1);
-  document.getElementById('game-status-text').textContent='Movimento '+(replayIndex)+'/'+replayAllMoves.length;
+  renderMoves(replayAllMoves, replayIndex>0?replayIndex-1:-1);
+
+  // Status with classification
+  const cls=window._analysisClassifications;
+  const moveIdx=replayIndex-1;
+  let status='';
+  if(replayIndex===0) status='Posição inicial';
+  else if(replayIndex===replayAllMoves.length) status='Fim da partida';
+  else status='Movimento '+replayIndex+' / '+replayAllMoves.length;
+
+  if(cls&&cls[moveIdx]){
+    const info=CLASS_INFO[cls[moveIdx]];
+    if(info) status+=' · '+info.label;
+  }
+  document.getElementById('game-status-text').textContent=status;
+}
+
+window.replayStep=dir=>{
+  if(!replayMode)return;
+  replayIndex=Math.max(0,Math.min(replayAllMoves.length,replayIndex+dir));
+  _replayApply();
 };
-window.replayGo=idx=>{replayIndex=idx;replayStep(0);};
-window.replayGoEnd=()=>{replayIndex=replayAllMoves.length;replayStep(0);};
-window.exitReplay=()=>{replayMode=false;backToLobby();};
+window.replayGo=idx=>{
+  if(!replayMode)return;
+  replayIndex=Math.max(0,Math.min(replayAllMoves.length,idx));
+  _replayApply();
+};
+window.replayGoEnd=()=>{
+  if(!replayMode)return;
+  replayIndex=replayAllMoves.length;
+  _replayApply();
+};
+window.replayClickProgress=e=>{
+  if(!replayMode||!replayAllMoves.length)return;
+  const rect=e.currentTarget.getBoundingClientRect();
+  const pct=(e.clientX-rect.left)/rect.width;
+  replayGo(Math.round(pct*replayAllMoves.length));
+};
+window.exitReplay=()=>{replayMode=false;window._analysisClassifications=null;analysisData=null;backToLobby();};
+
+window.reviewCurrentGame=()=>{
+  if(!fullGameMoves.length) return toast('Sem movimentos para revisar.');
+  document.getElementById('overlay-gameover').classList.remove('open');
+  if(sfWorker){sfWorker.active=false;try{sfWorker.w&&sfWorker.w.terminate();}catch(e){}sfWorker=null;}
+  vsStockfish=false; gameActive=false; stopTimerLoop();
+  // Get player names
+  const wName=document.getElementById('bot-color')&&document.getElementById('bot-color').classList.contains('white')
+    ?document.getElementById('bot-nick').textContent
+    :document.getElementById('top-nick').textContent;
+  const bName=document.getElementById('bot-color')&&document.getElementById('bot-color').classList.contains('black')
+    ?document.getElementById('bot-nick').textContent
+    :document.getElementById('top-nick').textContent;
+  openAnalysis(fullGameMoves.slice(), wName, bName);
+};
+
+/* ── ANALYSIS ENGINE ────────────────────────────────── */
+let analysisData=null; // {moves, evals, classifications, wName, bName}
+
+async function openAnalysis(moves, wName, bName){
+  showScreen('analysis');
+  document.getElementById('analysis-sub').textContent=wName+' vs '+bName+' · '+moves.length+' movimentos';
+  document.getElementById('an-white-name').textContent=wName;
+  document.getElementById('an-black-name').textContent=bName;
+  document.getElementById('an-white-acc').textContent='—';
+  document.getElementById('an-black-acc').textContent='—';
+  document.getElementById('analysis-loading').style.display='';
+  document.getElementById('analysis-content').style.display='none';
+  document.getElementById('analysis-loading-fill').style.width='0%';
+  document.getElementById('analysis-loading-text').textContent='0 / '+moves.length;
+
+  // Build list of FENs
+  const fens=[];
+  const tmp=new Chess();
+  fens.push(tmp.fen());
+  for(const m of moves){tmp.move(m);fens.push(tmp.fen());}
+
+  // Evaluate each position via stockfish.online
+  const depth=12;
+  const evals=[]; // cp scores from white's perspective
+  for(let i=0;i<fens.length;i++){
+    const pct=Math.round(i/fens.length*100);
+    document.getElementById('analysis-loading-fill').style.width=pct+'%';
+    document.getElementById('analysis-loading-text').textContent=i+' / '+fens.length;
+    const score=await evalPosition(fens[i],depth);
+    evals.push(score);
+    await new Promise(r=>setTimeout(r,80)); // rate limit
+  }
+  document.getElementById('analysis-loading-fill').style.width='100%';
+  document.getElementById('analysis-loading-text').textContent='Concluído!';
+
+  // Classify each move
+  const classifications=[];
+  for(let i=0;i<moves.length;i++){
+    const before=evals[i];   // eval before move (from side-to-move perspective)
+    const after=evals[i+1];  // eval after move
+    // Convert to white perspective
+    const isWhiteMove=(i%2===0);
+    const cpBefore=isWhiteMove?before:-before;
+    const cpAfter=isWhiteMove?-after:after; // after is from opponent perspective
+    const delta=cpAfter-cpBefore; // positive = improvement for player who moved
+    classifications.push(classifyMove(delta));
+  }
+
+  // Calculate accuracy
+  const wAcc=calcAccuracy(classifications.filter((_,i)=>i%2===0));
+  const bAcc=calcAccuracy(classifications.filter((_,i)=>i%2===1));
+
+  analysisData={moves,evals,classifications,wName,bName,fens};
+
+  // Render
+  document.getElementById('an-white-acc').textContent=wAcc.toFixed(1);
+  document.getElementById('an-black-acc').textContent=bAcc.toFixed(1);
+  renderEvalChart(evals,moves.length);
+  renderStatsTable(classifications);
+  document.getElementById('analysis-loading').style.display='none';
+  document.getElementById('analysis-content').style.display='';
+}
+
+async function evalPosition(fen,depth){
+  try{
+    const r=await fetch(`https://stockfish.online/api/s/v2.php?fen=${encodeURIComponent(fen)}&depth=${depth}`);
+    if(!r.ok) return 0;
+    const d=await r.json();
+    // d.evaluation is cp, d.mate is mate score
+    if(d.mate!=null) return d.mate>0?10000:-10000;
+    return typeof d.evaluation==='number'?Math.round(d.evaluation*100):0;
+  }catch(e){return 0;}
+}
+
+function classifyMove(delta){
+  // delta = cp change for the player who moved (positive = they improved)
+  if(delta>=0) return 'best';           // best or excellent
+  if(delta>=-10) return 'excellent';
+  if(delta>=-25) return 'good';
+  if(delta>=-50) return 'inaccuracy';
+  if(delta>=-100) return 'mistake';
+  return 'blunder';
+}
+
+function calcAccuracy(cls){
+  if(!cls.length) return 0;
+  const weights={best:100,excellent:90,good:75,inaccuracy:50,mistake:25,blunder:0};
+  return cls.reduce((s,c)=>s+(weights[c]||0),0)/cls.length;
+}
+
+function renderEvalChart(evals,numMoves){
+  const canvas=document.getElementById('eval-chart');
+  const ctx=canvas.getContext('2d');
+  const W=canvas.offsetWidth||canvas.parentElement.offsetWidth||320;
+  const H=80;
+  canvas.width=W; canvas.height=H;
+
+  // Clamp evals to ±800cp for display
+  const clamp=v=>Math.max(-800,Math.min(800,v));
+  const toY=v=>H/2-(clamp(v)/800)*(H/2-4);
+
+  ctx.clearRect(0,0,W,H);
+
+  // Background
+  ctx.fillStyle='#1e2330'; ctx.fillRect(0,0,W,H);
+  // Midline
+  ctx.strokeStyle='rgba(255,255,255,.15)'; ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(0,H/2);ctx.lineTo(W,H/2);ctx.stroke();
+
+  if(evals.length<2) return;
+
+  const step=W/(evals.length-1);
+
+  // White area (above midline)
+  ctx.beginPath();
+  ctx.moveTo(0,H/2);
+  evals.forEach((v,i)=>{ const x=i*step; const y=toY(v); ctx.lineTo(x,y<H/2?y:H/2); });
+  ctx.lineTo((evals.length-1)*step,H/2);
+  ctx.closePath();
+  ctx.fillStyle='rgba(240,237,224,.8)'; ctx.fill();
+
+  // Black area (below midline)
+  ctx.beginPath();
+  ctx.moveTo(0,H/2);
+  evals.forEach((v,i)=>{ const x=i*step; const y=toY(v); ctx.lineTo(x,y>H/2?y:H/2); });
+  ctx.lineTo((evals.length-1)*step,H/2);
+  ctx.closePath();
+  ctx.fillStyle='rgba(40,40,50,.9)'; ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  evals.forEach((v,i)=>{ const x=i*step; ctx.lineTo(x,toY(v)); });
+  ctx.strokeStyle='rgba(0,170,255,.6)'; ctx.lineWidth=1.5; ctx.stroke();
+
+  // Click to navigate
+  canvas.onclick=e=>{
+    if(!analysisData) return;
+    const rect=canvas.getBoundingClientRect();
+    const pct=(e.clientX-rect.left)/rect.width;
+    const idx=Math.round(pct*(analysisData.moves.length));
+    startAnalysisReviewAtMove(idx);
+  };
+}
+
+const CLASS_INFO={
+  best:     {label:'Melhor',    icon:'★', cls:'si-best'},
+  excellent:{label:'Excelente', icon:'!', cls:'si-great'},
+  good:     {label:'Bom',       icon:'✓', cls:'si-good'},
+  inaccuracy:{label:'Imprecisão',icon:'?',cls:'si-inaccuracy'},
+  mistake:  {label:'Erro',      icon:'?', cls:'si-mistake'},
+  blunder:  {label:'Gafe',      icon:'??',cls:'si-blunder'},
+};
+
+function renderStatsTable(cls){
+  const wCls=cls.filter((_,i)=>i%2===0);
+  const bCls=cls.filter((_,i)=>i%2===1);
+  const count=(arr,type)=>arr.filter(c=>c===type).length;
+  const types=['best','excellent','good','inaccuracy','mistake','blunder'];
+  const html=types.map(t=>{
+    const info=CLASS_INFO[t];
+    const wc=count(wCls,t), bc=count(bCls,t);
+    return `<div class="stat-row">
+      <div class="stat-val w" style="color:${wc>0&&(t==='mistake'||t==='blunder'||t==='inaccuracy')?'var(--danger)':t==='best'||t==='excellent'?'var(--success)':'var(--text)'}">${wc}</div>
+      <div class="stat-icon ${info.cls}">${info.icon}</div>
+      <div class="stat-val b" style="color:${bc>0&&(t==='mistake'||t==='blunder'||t==='inaccuracy')?'var(--danger)':t==='best'||t==='excellent'?'var(--success)':'var(--text)'}">${bc}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('analysis-stats-table').innerHTML=html;
+}
+
+window.startAnalysisReview=()=>startAnalysisReviewAtMove(0);
+window.startAnalysisReviewAtMove=idx=>{
+  if(!analysisData) return;
+  const {moves,classifications,wName,bName}=analysisData;
+  isSpectator=true; replayMode=true; gameActive=false;
+  myColor='w'; roomCode=null;
+  replayAllMoves=moves.slice();
+  replayIndex=Math.max(0,Math.min(moves.length,idx));
+  chess=new Chess();
+  replayAllMoves.slice(0,replayIndex).forEach(m=>chess.move(m));
+  lastFrom=null;lastTo=null;
+  if(replayIndex>0){
+    const h=chess.history({verbose:true});
+    if(h.length){lastFrom=h[h.length-1].from;lastTo=h[h.length-1].to;}
+  }
+  document.getElementById('spec-banner').style.display='';
+  document.getElementById('spec-banner').textContent='🔍 REVISÃO — '+wName+' vs '+bName;
+  document.getElementById('game-btns').style.display='none';
+  document.getElementById('btn-back-lobby').style.display='none';
+  document.getElementById('replay-controls').style.display='';
+  document.getElementById('replay-mode-label').style.display='';
+  document.getElementById('draw-offer-area').innerHTML=
+    `<button class="btn-back-sm" onclick="showScreen('analysis')" style="margin:4px 0">← ANÁLISE</button>`;
+  document.getElementById('sf-thinking').style.display='none';
+  document.getElementById('room-code-display').textContent='REVISÃO';
+  document.getElementById('time-label-display').textContent=wName+' vs '+bName;
+  document.getElementById('bot-nick').textContent=wName;
+  document.getElementById('top-nick').textContent=bName;
+  document.getElementById('bot-color').className='player-color white';
+  document.getElementById('top-color').className='player-color black';
+  document.getElementById('top-timer').textContent='';
+  document.getElementById('bot-timer').textContent='';
+  document.getElementById('bar-bottom').classList.remove('active-turn');
+  document.getElementById('bar-top').classList.remove('active-turn');
+  document.getElementById('chat-messages').innerHTML='';
+
+  // Store classifications for renderMoves
+  window._analysisClassifications=classifications;
+
+  renderBoard();
+  renderMoves(replayAllMoves, replayIndex>0?replayIndex-1:-1);
+  const status=replayIndex===0?'Posição inicial · ← → para navegar':
+    'Movimento '+replayIndex+' / '+replayAllMoves.length;
+  document.getElementById('game-status-text').textContent=status;
+  showScreen('game');
+};
+
+// Keyboard navigation
+document.addEventListener('keydown',e=>{
+  if(!replayMode)return;
+  if(e.key==='ArrowLeft')replayStep(-1);
+  else if(e.key==='ArrowRight')replayStep(1);
+  else if(e.key==='ArrowUp'){e.preventDefault();replayGo(0);}
+  else if(e.key==='ArrowDown'){e.preventDefault();replayGoEnd();}
+});
 
 /* ── START GAME ─────────────────────────────────────── */
 function startGame(code,roomData,color){
@@ -1551,10 +1885,43 @@ function updateStatusText(){
 }
 function renderMoves(moves,hlIdx){
   const body=document.getElementById('moves-body');
+  const cls=window._analysisClassifications||[];
+  const CLASS_BADGE={
+    best:     '<span style="color:#6abf69;font-size:10px" title="Melhor">★</span>',
+    excellent:'<span style="color:#5b8dd9;font-size:10px" title="Excelente">!</span>',
+    good:     '<span style="color:#96bc4b;font-size:10px" title="Bom">✓</span>',
+    inaccuracy:'<span style="color:#f0a030;font-size:10px" title="Imprecisão">?</span>',
+    mistake:  '<span style="color:#e07050;font-size:10px" title="Erro">??</span>',
+    blunder:  '<span style="color:#cc3333;font-size:10px" title="Gafe">⚠</span>',
+  };
   const rows=[];
-  for(let i=0;i<moves.length;i+=2)rows.push({n:Math.floor(i/2)+1,w:moves[i]||'',b:moves[i+1]||'',wi:i,bi:i+1});
-  body.innerHTML=rows.map(r=>`<div class="move-row"><span class="move-num">${r.n}.</span><span class="move-w${hlIdx===r.wi?' hl':''}">${r.w}</span><span class="move-b${hlIdx===r.bi?' hl':''}">${r.b}</span></div>`).join('');
-  body.scrollTop=body.scrollHeight;
+  for(let i=0;i<moves.length;i+=2)
+    rows.push({n:Math.floor(i/2)+1,w:moves[i]||'',b:moves[i+1]||'',wi:i,bi:i+1});
+
+  if(!rows.length){body.innerHTML='<div style="color:var(--text2);font-size:11px;padding:6px 8px">Nenhum movimento ainda.</div>';return;}
+
+  body.innerHTML=rows.map(r=>{
+    const wb=cls[r.wi]?CLASS_BADGE[cls[r.wi]]||'':'';
+    const bb=cls[r.bi]?CLASS_BADGE[cls[r.bi]]||'':'';
+    return `<div class="move-row">
+      <span class="move-num">${r.n}.</span>
+      <span class="move-w${hlIdx===r.wi?' hl':''}" onclick="replayGo(${r.wi+1})">${r.w}${wb}</span>
+      <span class="move-b${r.b?(hlIdx===r.bi?' hl':''):' empty'}" onclick="${r.b?`replayGo(${r.bi+1})`:'void(0)'}">${r.b}${bb}</span>
+    </div>`;
+  }).join('');
+
+  if(hlIdx!=null&&hlIdx>=0){
+    const row=body.querySelectorAll('.move-row')[Math.floor(hlIdx/2)];
+    if(row) row.scrollIntoView({block:'nearest',behavior:'smooth'});
+  } else {
+    body.scrollTop=body.scrollHeight;
+  }
+
+  const total=moves.length;
+  const cur=hlIdx!=null&&hlIdx>=0?hlIdx+1:total;
+  const pct=total>0?Math.round(cur/total*100):0;
+  const bar=document.getElementById('replay-progress-bar');
+  if(bar) bar.style.width=pct+'%';
 }
 
 /* ── DRAW ───────────────────────────────────────────── */
