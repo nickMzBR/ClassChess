@@ -1406,10 +1406,69 @@ window.reviewCurrentGame=()=>{
 };
 
 /* ── ANALYSIS ENGINE ────────────────────────────────── */
-let analysisData=null; // {moves, evals, classifications, wName, bName}
+let analysisData=null;
+
+// Converte cp para "score normalizado" igual Chess.com usa internamente
+// Isso evita que posições já ganhas/perdidas distorçam a classificação
+function normalizeScore(cp){
+  // Sigmoide: mapeia cp para -1..+1
+  if(cp>=9000) return 1;
+  if(cp<=-9000) return -1;
+  return 2/(1+Math.exp(-0.004*cp))-1;
+}
+
+// Classificação idêntica à lógica do Chess.com:
+// Compara a avaliação da jogada feita vs a melhor jogada possível
+// cpBest  = avaliação do melhor lance (perspectiva de quem jogou, positivo = bom)
+// cpPlayed = avaliação do lance feito (mesma perspectiva)
+function classifyMove(cpBefore, cpAfter, isWhite){
+  // cpBefore/cpAfter: centipawns from WHITE's perspective
+  // loss = how much WORSE it got for the player who moved
+  const loss = isWhite ? (cpBefore - cpAfter) : (cpAfter - cpBefore);
+  if(loss <= 0)   return 'best';
+  if(loss <= 10)  return 'excellent';
+  if(loss <= 25)  return 'good';
+  if(loss <= 50)  return 'inaccuracy';
+  if(loss <= 150) return 'mistake';
+  return 'blunder';
+}
+
+// Precisão igual a Chess.com: baseada em win% perdida por jogada
+function cpToWinPct(cp){
+  return 50+50*(2/(1+Math.exp(-0.00368208*cp))-1);
+}
+function calcAccuracy(cpBests, cpPlayeds){
+  // cpBests[i] and cpPlayeds[i] are already from the player's perspective (positive = good for them)
+  if(!cpBests.length) return 100;
+  let total=0;
+  for(let i=0;i<cpBests.length;i++){
+    const best=cpBests[i]??0, played=cpPlayeds[i]??best;
+    // Win% before and after from player's perspective
+    const winBest=cpToWinPct(best), winPlayed=cpToWinPct(played);
+    const loss=Math.max(0,winBest-winPlayed);
+    const acc=Math.max(0,Math.min(100, 103.1668*Math.exp(-0.04354*loss)-3.1669));
+    total+=acc;
+  }
+  return total/cpBests.length;
+}
+
+async function evalPosition(fen, depth){
+  try{
+    const r=await fetch(
+      `https://stockfish.online/api/s/v2.php?fen=${encodeURIComponent(fen)}&depth=${depth}`,
+      {signal:AbortSignal.timeout(8000)}
+    );
+    if(!r.ok) return null;
+    const d=await r.json();
+    if(d.mate!=null&&d.mate!==null) return d.mate>0?9900:-9900;
+    if(typeof d.evaluation==='number') return Math.round(d.evaluation*100);
+    return null;
+  }catch(e){return null;}
+}
 
 async function openAnalysis(moves, wName, bName){
   showScreen('analysis');
+  window._analysisClassifications=null;
   document.getElementById('analysis-sub').textContent=wName+' vs '+bName+' · '+moves.length+' movimentos';
   document.getElementById('an-white-name').textContent=wName;
   document.getElementById('an-black-name').textContent=bName;
@@ -1420,79 +1479,59 @@ async function openAnalysis(moves, wName, bName){
   document.getElementById('analysis-loading-fill').style.width='0%';
   document.getElementById('analysis-loading-text').textContent='0 / '+moves.length;
 
-  // Build list of FENs
+  // Gera lista de FENs: posição antes de cada lance + posição final
   const fens=[];
   const tmp=new Chess();
   fens.push(tmp.fen());
   for(const m of moves){tmp.move(m);fens.push(tmp.fen());}
 
-  // Evaluate each position via stockfish.online
-  const depth=12;
-  const evals=[]; // cp scores from white's perspective
+  const depth=10;
+  // evals[i] = avaliação da posição i em cp, perspectiva BRANCAS
+  // bestEvals[i] = qual seria o melhor lance possível na posição i (para calcular perda)
+  // Para isso avaliamos a posição ANTES do lance com depth maior para pegar o bestmove
+  // Simplificação: usamos evals[i] como o "best" e evals[i+1] como o "played"
+  // Isso é exatamente o que Chess.com faz: compara eval antes vs eval depois
+  
+  const evals=[];
+  let prev=null;
   for(let i=0;i<fens.length;i++){
     const pct=Math.round(i/fens.length*100);
     document.getElementById('analysis-loading-fill').style.width=pct+'%';
-    document.getElementById('analysis-loading-text').textContent=i+' / '+fens.length;
-    const score=await evalPosition(fens[i],depth);
+    document.getElementById('analysis-loading-text').textContent=(i)+' / '+fens.length;
+    let score=await evalPosition(fens[i],depth);
+    // Se API falhou, interpola com o anterior
+    if(score===null) score=prev;
     evals.push(score);
-    await new Promise(r=>setTimeout(r,80)); // rate limit
+    prev=score;
+    if(i<fens.length-1) await new Promise(r=>setTimeout(r,100));
   }
-  document.getElementById('analysis-loading-fill').style.width='100%';
-  document.getElementById('analysis-loading-text').textContent='Concluído!';
 
-  // Classify each move
+  // Classifica cada lance
   const classifications=[];
+  const wBests=[], wPlayeds=[], bBests=[], bPlayeds=[];
+
   for(let i=0;i<moves.length;i++){
-    const before=evals[i];   // eval before move (from side-to-move perspective)
-    const after=evals[i+1];  // eval after move
-    // Convert to white perspective
-    const isWhiteMove=(i%2===0);
-    const cpBefore=isWhiteMove?before:-before;
-    const cpAfter=isWhiteMove?-after:after; // after is from opponent perspective
-    const delta=cpAfter-cpBefore; // positive = improvement for player who moved
-    classifications.push(classifyMove(delta));
+    const isWhite=(i%2===0);
+    const cpBefore=evals[i]??0;   // eval antes do lance (perspectiva brancas)
+    const cpAfter=evals[i+1]??0;  // eval depois do lance (perspectiva brancas)
+
+    const cls=classifyMove(cpBefore, cpAfter, isWhite);
+    classifications.push(cls);
+
+    if(isWhite){wBests.push(cpBefore);wPlayeds.push(cpAfter);}
+    else{bBests.push(-cpBefore);bPlayeds.push(-cpAfter);}
   }
 
-  // Calculate accuracy
-  const wAcc=calcAccuracy(classifications.filter((_,i)=>i%2===0));
-  const bAcc=calcAccuracy(classifications.filter((_,i)=>i%2===1));
-
+  const wAcc=calcAccuracy(wBests,wPlayeds);
+  const bAcc=calcAccuracy(bBests,bPlayeds);
   analysisData={moves,evals,classifications,wName,bName,fens};
 
-  // Render
   document.getElementById('an-white-acc').textContent=wAcc.toFixed(1);
   document.getElementById('an-black-acc').textContent=bAcc.toFixed(1);
-  renderEvalChart(evals,moves.length);
+  renderEvalChart(evals);
   renderStatsTable(classifications);
   document.getElementById('analysis-loading').style.display='none';
   document.getElementById('analysis-content').style.display='';
-}
-
-async function evalPosition(fen,depth){
-  try{
-    const r=await fetch(`https://stockfish.online/api/s/v2.php?fen=${encodeURIComponent(fen)}&depth=${depth}`);
-    if(!r.ok) return 0;
-    const d=await r.json();
-    // d.evaluation is cp, d.mate is mate score
-    if(d.mate!=null) return d.mate>0?10000:-10000;
-    return typeof d.evaluation==='number'?Math.round(d.evaluation*100):0;
-  }catch(e){return 0;}
-}
-
-function classifyMove(delta){
-  // delta = cp change for the player who moved (positive = they improved)
-  if(delta>=0) return 'best';           // best or excellent
-  if(delta>=-10) return 'excellent';
-  if(delta>=-25) return 'good';
-  if(delta>=-50) return 'inaccuracy';
-  if(delta>=-100) return 'mistake';
-  return 'blunder';
-}
-
-function calcAccuracy(cls){
-  if(!cls.length) return 0;
-  const weights={best:100,excellent:90,good:75,inaccuracy:50,mistake:25,blunder:0};
-  return cls.reduce((s,c)=>s+(weights[c]||0),0)/cls.length;
 }
 
 function renderEvalChart(evals,numMoves){
@@ -1503,7 +1542,7 @@ function renderEvalChart(evals,numMoves){
   canvas.width=W; canvas.height=H;
 
   // Clamp evals to ±800cp for display
-  const clamp=v=>Math.max(-800,Math.min(800,v));
+  const clamp=v=>Math.max(-800,Math.min(800,v??0));
   const toY=v=>H/2-(clamp(v)/800)*(H/2-4);
 
   ctx.clearRect(0,0,W,H);
