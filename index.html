@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ClassChess — Chess on</title>
+<title>ClassChess — Xadrez Online</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
@@ -316,7 +316,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 .btn-start-review{width:100%;padding:16px;background:linear-gradient(135deg,#2a8a3a,#3dbd52);color:#fff;border:none;border-radius:10px;font-family:'Orbitron',monospace;font-size:15px;font-weight:700;letter-spacing:2px;cursor:pointer;transition:all .2s;margin-top:4px;}
 .btn-start-review:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(60,180,80,.3);}
 .btn-start-review:disabled{background:var(--bg3);color:var(--text2);cursor:not-allowed;transform:none;box-shadow:none;}
-
+@keyframes loadingSlide{from{margin-left:0}to{margin-left:70%}}
 </style>
 </head>
 <body>
@@ -337,19 +337,27 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
   <div class="auth-card">
     <div class="auth-title">♟ CLASSCHESS</div>
     <div class="auth-sub">Plataforma de Xadrez Online em Tempo Real</div>
-    <div class="auth-tabs">
-      <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">LOGIN</button>
-      <button class="auth-tab" id="tab-register" onclick="switchTab('register')">CADASTRO</button>
+    <div id="auth-app-loading" style="text-align:center;padding:20px 0;color:var(--text2);font-size:12px;font-family:'Share Tech Mono',monospace">
+      <div style="margin-bottom:8px">⚙ Carregando...</div>
+      <div style="width:100%;height:3px;background:var(--border);border-radius:2px;overflow:hidden">
+        <div id="auth-loading-bar" style="height:100%;width:30%;background:var(--blue);border-radius:2px;animation:loadingSlide 1s infinite alternate"></div>
+      </div>
     </div>
-    <div id="form-login">
-      <div class="form-group"><label class="form-label">NICK</label><input class="form-input" id="login-nick" placeholder="seu_nick" maxlength="20" autocomplete="off"></div>
-      <div class="form-group"><label class="form-label">SENHA</label><input class="form-input" type="password" id="login-pass" placeholder="••••••••" autocomplete="off"></div>
-      <button class="btn-primary" onclick="doLogin()">ENTRAR</button>
-    </div>
-    <div id="form-register" style="display:none">
-      <div class="form-group"><label class="form-label">NICK (único)</label><input class="form-input" id="reg-nick" placeholder="escolha_um_nick" maxlength="20" autocomplete="off"></div>
-      <div class="form-group"><label class="form-label">SENHA</label><input class="form-input" type="password" id="reg-pass" placeholder="mínimo 6 caracteres" autocomplete="off"></div>
-      <button class="btn-primary" onclick="doRegister()">CRIAR CONTA</button>
+    <div id="auth-forms" style="display:none">
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">LOGIN</button>
+        <button class="auth-tab" id="tab-register" onclick="switchTab('register')">CADASTRO</button>
+      </div>
+      <div id="form-login">
+        <div class="form-group"><label class="form-label">NICK</label><input class="form-input" id="login-nick" placeholder="seu_nick" maxlength="20" autocomplete="off"></div>
+        <div class="form-group"><label class="form-label">SENHA</label><input class="form-input" type="password" id="login-pass" placeholder="••••••••" autocomplete="off"></div>
+        <button class="btn-primary" onclick="doLogin()">ENTRAR</button>
+      </div>
+      <div id="form-register" style="display:none">
+        <div class="form-group"><label class="form-label">NICK (único)</label><input class="form-input" id="reg-nick" placeholder="escolha_um_nick" maxlength="20" autocomplete="off"></div>
+        <div class="form-group"><label class="form-label">SENHA</label><input class="form-input" type="password" id="reg-pass" placeholder="mínimo 6 caracteres" autocomplete="off"></div>
+        <button class="btn-primary" onclick="doRegister()">CRIAR CONTA</button>
+      </div>
     </div>
     <div id="auth-msg" class="form-msg" style="display:none"></div>
   </div>
@@ -616,6 +624,10 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
     "firebase/database": "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js"
   }
 }
+</script>
+<script>
+// Bloqueia cliques até o app carregar
+window.doLogin=window.doRegister=window.switchTab=()=>{ /* aguardando carregamento */ };
 </script>
 <script>
 (async function(){
@@ -1157,13 +1169,17 @@ window.doLogin=async()=>{
   const nick=document.getElementById('login-nick').value.trim().toLowerCase();
   const pass=document.getElementById('login-pass').value;
   if(!nick||!pass)return showMsg('Preencha todos os campos.','error');
+  showMsg('Entrando...','success');
   try{
     const s=await get(ref(db,'/users/'+nick));
     if(!s.exists())return showMsg('Nick não encontrado.','error');
     const u=s.val();
     if(u.pass!==hashPass(pass))return showMsg('Senha incorreta.','error');
     setUser({nick,wins:u.wins||0});
-  }catch(e){showMsg('Erro: '+e.message,'error');}
+  }catch(e){
+    console.error('doLogin error:',e);
+    showMsg('Erro de conexão: '+e.message,'error');
+  }
 };
 window.doRegister=async()=>{
   const nick=document.getElementById('reg-nick').value.trim().toLowerCase().replace(/\s+/g,'_');
@@ -2153,6 +2169,10 @@ document.getElementById('join-code').addEventListener('keydown',e=>{if(e.key==='
 document.getElementById('chat-input').addEventListener('keydown',e=>{if(e.key==='Enter')sendChat();});
 
 /* ── INIT ───────────────────────────────────────────── */
+// App carregado — esconde loading, mostra formulários
+document.getElementById('auth-app-loading').style.display='none';
+document.getElementById('auth-forms').style.display='';
+
 const saved=localStorage.getItem('cc_user');
 if(saved){try{setUser(JSON.parse(saved));}catch(e){localStorage.removeItem('cc_user');}}
 
